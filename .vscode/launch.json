@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Api.AppHost (Aspire)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/Api.AppHost/bin/Debug/net10.0/Api.AppHost.dll",
+      "args": ["--launch-profile", "https"],
+      "cwd": "${workspaceFolder}/Api.AppHost",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "env": {},
+      "serverReadyAction": {
+        "pattern": "Now listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    }
+  ]
+}
