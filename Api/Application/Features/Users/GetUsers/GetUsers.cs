@@ -15,24 +15,28 @@ public static class GetUsersEndpoint
 {
     public static void MapGetUsers(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/usuarios", async (
-            [AsParameters] GetUsersRequest request,
-            [FromServices] ISender sender,
-            CancellationToken cancellationToken = default) =>
-        {
-            try
-            {
-                var query = new GetUsersQuery(request.Page, request.PageSize);
-                var response = await sender.Send(query, cancellationToken);
-                return Results.Ok(response);
-            }
-            catch (Domain.Common.ValidationException ex)
-            {
-                // Retorna 400 Bad Request estructurado con los errores de paginación
-                return Results.ValidationProblem(ex.Errors);
-            }
-        })
-        .WithName("GetUsers");
+        app.MapGet(
+                "/api/usuarios",
+                async (
+                    [AsParameters] GetUsersRequest request,
+                    [FromServices] ISender sender,
+                    CancellationToken cancellationToken = default
+                ) =>
+                {
+                    try
+                    {
+                        var query = new GetUsersQuery(request.Page, request.PageSize);
+                        var response = await sender.Send(query, cancellationToken);
+                        return Results.Ok(response);
+                    }
+                    catch (Domain.Common.ValidationException ex)
+                    {
+                        // Retorna 400 Bad Request estructurado con los errores de paginación
+                        return Results.ValidationProblem(ex.Errors);
+                    }
+                }
+            )
+            .WithName("GetUsers");
     }
 }
 
@@ -49,7 +53,8 @@ public record PaginatedResponse<T>(
     int TotalCount,
     int TotalPages,
     bool HasPreviousPage,
-    bool HasNextPage);
+    bool HasNextPage
+);
 
 // --- CQRS Query ---
 
@@ -64,12 +69,18 @@ public record GetUsersQuery(int Page, int PageSize) : IRequest<PaginatedResponse
 
         if (query.Page < 1)
         {
-            errors.Add(nameof(query.Page), new[] { "El número de página ('page') debe ser mayor o igual a 1." });
+            errors.Add(
+                nameof(query.Page),
+                new[] { "El número de página ('page') debe ser mayor o igual a 1." }
+            );
         }
 
         if (query.PageSize < 1 || query.PageSize > 100)
         {
-            errors.Add(nameof(query.PageSize), new[] { "El tamaño de página ('pageSize') debe estar entre 1 y 100." });
+            errors.Add(
+                nameof(query.PageSize),
+                new[] { "El tamaño de página ('pageSize') debe estar entre 1 y 100." }
+            );
         }
 
         if (errors.Any())
@@ -90,7 +101,10 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PaginatedResp
         _context = context;
     }
 
-    public async Task<PaginatedResponse<UserDto>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedResponse<UserDto>> Handle(
+        GetUsersQuery request,
+        CancellationToken cancellationToken
+    )
     {
         // 1. Ejecutamos la validación acumulativa de la consulta
         GetUsersQuery.Validate(request);
@@ -105,11 +119,7 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PaginatedResp
         var items = await query
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(u => new UserDto(
-                u.Id.Value,
-                u.Nombre.Value,
-                u.Apellido.Value,
-                u.Email.Value))
+            .Select(u => new UserDto(u.Id.Value, u.Nombre.Value, u.Apellido.Value, u.Email.Value))
             .ToListAsync(cancellationToken);
 
         // 5. Calcular metadatos de paginación
@@ -124,6 +134,7 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PaginatedResp
             totalCount,
             totalPages,
             hasPreviousPage,
-            hasNextPage);
+            hasNextPage
+        );
     }
 }

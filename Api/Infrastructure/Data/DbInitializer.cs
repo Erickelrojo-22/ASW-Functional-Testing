@@ -12,8 +12,24 @@ public static class DbInitializer
 {
     public static async Task InitializeAsync(UsuariosDbContext context)
     {
-        // Asegurarse de que la base de datos y las tablas existan
-        await context.Database.EnsureCreatedAsync();
+        // Asegurarse de que la base de datos y las tablas existan (con reintentos para resiliencia ante arranques de contenedores)
+        var databaseReady = false;
+        var retries = 40;
+        while (!databaseReady && retries > 0)
+        {
+            try
+            {
+                await context.Database.EnsureCreatedAsync();
+                databaseReady = true;
+            }
+            catch (Exception)
+            {
+                retries--;
+                if (retries == 0)
+                    throw;
+                await Task.Delay(1000);
+            }
+        }
 
         // Evitar doble siembra si ya existen datos
         if (await context.Usuarios.AnyAsync())

@@ -16,27 +16,35 @@ public static class GetUserByIdEndpoint
 {
     public static void MapGetUserById(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/usuarios/{id:guid}", async (
-            Guid id,
-            [FromServices] ISender sender,
-            CancellationToken cancellationToken) =>
-        {
-            try
-            {
-                var query = new GetUserByIdQuery(id);
-                var response = await sender.Send(query, cancellationToken);
-                return Results.Ok(response);
-            }
-            catch (Vogen.ValueObjectValidationException ex)
-            {
-                return Results.BadRequest(new { Error = "Identificador inválido", Detalle = ex.Message });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return Results.NotFound(new { Error = "No encontrado", Detalle = ex.Message });
-            }
-        })
-        .WithName("GetUserById");
+        app.MapGet(
+                "/api/usuarios/{id:guid}",
+                async (
+                    Guid id,
+                    [FromServices] ISender sender,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    try
+                    {
+                        var query = new GetUserByIdQuery(id);
+                        var response = await sender.Send(query, cancellationToken);
+                        return Results.Ok(response);
+                    }
+                    catch (Vogen.ValueObjectValidationException ex)
+                    {
+                        return Results.BadRequest(
+                            new { Error = "Identificador inválido", Detalle = ex.Message }
+                        );
+                    }
+                    catch (KeyNotFoundException ex)
+                    {
+                        return Results.NotFound(
+                            new { Error = "No encontrado", Detalle = ex.Message }
+                        );
+                    }
+                }
+            )
+            .WithName("GetUserById");
     }
 }
 
@@ -59,16 +67,24 @@ public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, GetUser
         _context = context;
     }
 
-    public async Task<GetUserByIdResponse> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
+    public async Task<GetUserByIdResponse> Handle(
+        GetUserByIdQuery request,
+        CancellationToken cancellationToken
+    )
     {
         // 1. Instanciamos el objeto de valor UserId con validación
         var userId = UserId.From(request.Id);
 
         // 2. Buscamos directamente en el DbContext
-        var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var usuario = await _context.Usuarios.FirstOrDefaultAsync(
+            u => u.Id == userId,
+            cancellationToken
+        );
         if (usuario is null)
         {
-            throw new KeyNotFoundException($"No se encontró ningún usuario con el ID especificado.");
+            throw new KeyNotFoundException(
+                $"No se encontró ningún usuario con el ID especificado."
+            );
         }
 
         // 3. Mapeamos y retornamos la respuesta
@@ -76,6 +92,7 @@ public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, GetUser
             usuario.Id.Value,
             usuario.Nombre.Value,
             usuario.Apellido.Value,
-            usuario.Email.Value);
+            usuario.Email.Value
+        );
     }
 }

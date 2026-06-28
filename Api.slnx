@@ -1,4 +1,6 @@
 <Solution>
-  <Project Path="Api.AppHost/Api.AppHost.csproj" />
+  <Project Path="Api.Tests/Api.Tests.csproj" />
+  <Project Path="Api.Tests.AppHost/Api.Tests.AppHost.csproj" />
   <Project Path="Api/Api.csproj" />
+  <Project Path="Api.AppHost/Api.AppHost.csproj" />
 </Solution>

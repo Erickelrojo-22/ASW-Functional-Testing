@@ -1,6 +1,8 @@
 using Api.Application.Features.Users.CreateUser;
+using Api.Application.Features.Users.DeleteUser;
 using Api.Application.Features.Users.GetUserById;
 using Api.Application.Features.Users.GetUsers;
+using Api.Application.Features.Users.UpdateUser;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,20 +25,24 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.Use(async (context, next) =>
-{
-    if (context.Request.Method == HttpMethods.Get && context.Request.Path == "/api/usuarios/")
+app.Use(
+    async (context, next) =>
     {
-        context.Response.Redirect("/api/usuarios", permanent: false);
-        return;
-    }
+        if (context.Request.Method == HttpMethods.Get && context.Request.Path == "/api/usuarios/")
+        {
+            context.Response.Redirect("/api/usuarios", permanent: false);
+            return;
+        }
 
-    await next();
-});
+        await next();
+    }
+);
 
 app.MapCreateUser();
 app.MapGetUserById();
 app.MapGetUsers();
+app.MapUpdateUser();
+app.MapDeleteUser();
 
 // Inicializar y sembrar base de datos con Bogus
 using (var scope = app.Services.CreateScope())
@@ -47,3 +53,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+// Requerido para WebApplicationFactory en pruebas de integración
+namespace Api
+{
+    public partial class Program { }
+}

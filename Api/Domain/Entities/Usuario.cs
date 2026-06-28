@@ -12,6 +12,8 @@ public class Usuario : Entity<UserId>
     public Apellido Apellido { get; private set; }
     public Email Email { get; private set; }
 
+    public bool IsDeleted { get; private set; } = false;
+
     // Requerido para ORMs como EF Core y serialización
 #pragma warning disable CS8618
     private Usuario() { }
@@ -23,6 +25,7 @@ public class Usuario : Entity<UserId>
         Nombre = nombre;
         Apellido = apellido;
         Email = email;
+        IsDeleted = false;
     }
 
     /// <summary>
@@ -41,5 +44,13 @@ public class Usuario : Entity<UserId>
         Nombre = nombre;
         Apellido = apellido;
         Email = email;
+    }
+
+    /// <summary>
+    /// Marca al usuario como eliminado (Soft Delete).
+    /// </summary>
+    public void SoftDelete()
+    {
+        IsDeleted = true;
     }
 }

@@ -7,7 +7,6 @@ namespace Api.Infrastructure.Data;
 /// <summary>
 /// DbContext de EF Core para la gestión de Usuarios.
 /// </summary>
-
 public class UsuariosDbContext : DbContext
 {
     public UsuariosDbContext(DbContextOptions<UsuariosDbContext> options)
@@ -46,9 +45,17 @@ public class UsuariosDbContext : DbContext
                 .HasMaxLength(150)
                 .IsRequired();
 
-            // Índice único en el campo Email
-            b.HasIndex(u => u.Email).IsUnique();
+            b.Property(u => u.IsDeleted)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            // Filtro global para ignorar registros eliminados
+            b.HasQueryFilter(u => !u.IsDeleted);
+
+            // Índice único en el campo Email (solo para usuarios activos)
+            b.HasIndex(u => u.Email)
+                .HasFilter("[IsDeleted] = 0")
+                .IsUnique();
         });
     }
 }
-
