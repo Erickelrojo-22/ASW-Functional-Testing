@@ -1,3 +1,4 @@
+using Api.Application.Behaviors;
 using Api.Application.Features.Users.CreateUser;
 using Api.Application.Features.Users.DeleteUser;
 using Api.Application.Features.Users.GetUserById;
@@ -13,7 +14,12 @@ builder.Services.AddOpenApi();
 
 // Registrar dependencias de la arquitectura limpia
 builder.AddSqlServerDbContext<Api.Infrastructure.Data.UsuariosDbContext>("db");
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+    cfg.AddOpenBehavior(typeof(PerformanceBehavior<,>));
+});
 
 var app = builder.Build();
 

@@ -89,6 +89,7 @@ TrabajoServer1/
 | **Feature: UpdateUser** | Aplicación / API | 🟢 Completado | Endpoint, Comando `UpdateUserCommand` con `public static void Validate` y Handler en [UpdateUser.cs](file:///C:/Users/Marcelo/Desktop/TrabajoServer1/Api/Application/Features/Users/UpdateUser/UpdateUser.cs). |
 | **Feature: DeleteUser (Soft Delete)** | Aplicación / API | 🟢 Completado | Endpoint, Comando `DeleteUserCommand` y Handler en [DeleteUser.cs](file:///C:/Users/Marcelo/Desktop/TrabajoServer1/Api/Application/Features/Users/DeleteUser/DeleteUser.cs). |
 | **Persistencia de Datos (EF)** | Infraestructura | 🟢 Completado | Configurado `UsuariosDbContext` en [Data/](file:///C:/Users/Marcelo/Desktop/TrabajoServer1/Api/Infrastructure/Data/), incluyendo filtros globales para Soft Delete e índice único filtrado por `IsDeleted`. |
+| **Pipeline Behaviors** | Aplicación | 🟢 Completado | Registrados `LoggingBehavior` y `PerformanceBehavior` en [Behaviors/](file:///C:/Users/Marcelo/Desktop/TrabajoServer1/Api/Application/Behaviors/) para rastreo de solicitudes y auditoría de tiempos. |
 | **Sembrado de Datos (Bogus)** | Infraestructura | 🟢 Completado | Sembrado automático `DbInitializer` en [DbInitializer.cs](file:///C:/Users/Marcelo/Desktop/TrabajoServer1/Api/Infrastructure/Data/DbInitializer.cs) con lógica resiliente de base de datos. |
 | **Integración en Program** | API | 🟢 Completado | Mapeo de Minimal APIs en [Program.cs](file:///C:/Users/Marcelo/Desktop/TrabajoServer1/Api/Program.cs). |
 | **AppHost de Pruebas** | Pruebas | 🟢 Completado | Creado `Api.Tests.AppHost` que define el contenedor de SQL Server de pruebas. |
@@ -193,3 +194,57 @@ public abstract class BaseIntegrationTest
     }
 }
 ```
+
+### MediatR Pipeline Behaviors (Logging y Performance)
+Se configuraron dos comportamientos de canalización (*Pipeline Behaviors*) genéricos para encapsular los aspectos transversales de auditoría y análisis de tiempos sin acoplar los handlers:
+
+#### LoggingBehavior
+Registra de forma automática cuándo inicia y termina cada `Command`/`Query` junto con los parámetros serializados en JSON:
+```csharp
+public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
+{
+    // ...
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellation)
+    {
+        _logger.LogInformation("Manejando solicitud {RequestName}. Datos: {RequestData}", typeof(TRequest).Name, JsonSerializer.Serialize(request));
+        try
+        {
+            var response = await next();
+            _logger.LogInformation("Solicitud {RequestName} completada con éxito.", typeof(TRequest).Name);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ocurrió un error al manejar la solicitud {RequestName}.", typeof(TRequest).Name);
+            throw;
+        }
+    }
+}
+```
+
+#### PerformanceBehavior
+Mide el tiempo transcurrido de ejecución del handler con un `Stopwatch`. Si la solicitud tarda más del umbral configurado de **500 ms**, emite automáticamente un log de advertencia (`LogWarning`) para identificar cuellos de botella de rendimiento:
+```csharp
+public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
+{
+    // ...
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellation)
+    {
+        _timer.Start();
+        var response = await next();
+        _timer.Stop();
+
+        var elapsed = _timer.ElapsedMilliseconds;
+        _logger.LogInformation("Métrica de Rendimiento: La solicitud {RequestName} tardó {Elapsed} ms.", typeof(TRequest).Name, elapsed);
+
+        if (elapsed > 500)
+        {
+            _logger.LogWarning("Advertencia de Rendimiento: Solicitud lenta detectada. {RequestName} tomó {Elapsed} ms.", typeof(TRequest).Name, elapsed);
+        }
+        return response;
+    }
+}
+```
+
