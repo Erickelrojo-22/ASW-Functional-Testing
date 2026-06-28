@@ -17,7 +17,8 @@ public class Usuario : Entity<UserId>
     private Usuario() { }
 #pragma warning restore CS8618
 
-    public Usuario(UserId id, Nombre nombre, Apellido apellido, Email email) : base(id)
+    public Usuario(UserId id, Nombre nombre, Apellido apellido, Email email)
+        : base(id)
     {
         Nombre = nombre;
         Apellido = apellido;

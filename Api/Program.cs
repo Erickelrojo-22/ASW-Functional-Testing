@@ -1,16 +1,17 @@
+using Api.Application.Features.Users.CreateUser;
+using Api.Application.Features.Users.GetUserById;
+using Api.Application.Features.Users.GetUsers;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 // Registrar dependencias de la arquitectura limpia
 builder.AddSqlServerDbContext<Api.Infrastructure.Data.UsuariosDbContext>("db");
-builder.Services.AddScoped<Api.Domain.Repositories.IUsuarioRepository, Api.Infrastructure.Data.EfUsuarioRepository>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
-
 
 var app = builder.Build();
 
@@ -22,14 +23,26 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == HttpMethods.Get && context.Request.Path == "/api/usuarios/")
+    {
+        context.Response.Redirect("/api/usuarios", permanent: false);
+        return;
+    }
 
-app.MapControllers();
+    await next();
+});
+
+app.MapCreateUser();
+app.MapGetUserById();
+app.MapGetUsers();
 
 // Inicializar y sembrar base de datos con Bogus
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<Api.Infrastructure.Data.UsuariosDbContext>();
+    var context =
+        scope.ServiceProvider.GetRequiredService<Api.Infrastructure.Data.UsuariosDbContext>();
     await Api.Infrastructure.Data.DbInitializer.InitializeAsync(context);
 }
 

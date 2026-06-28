@@ -22,15 +22,14 @@ public static class DbInitializer
         }
 
         // Configuración del generador de datos ficticios Bogus
-        var userFaker = new Faker<Usuario>("es")
-            .CustomInstantiator(f =>
-            {
-                var id = UserId.New();
-                var nombre = Nombre.From(f.Name.FirstName());
-                var apellido = Apellido.From(f.Name.LastName());
-                var email = Email.From(f.Internet.Email(nombre.Value, apellido.Value));
-                return Usuario.Create(id, nombre, apellido, email);
-            });
+        var userFaker = new Faker<Usuario>("es").CustomInstantiator(f =>
+        {
+            var id = UserId.New();
+            var nombre = Nombre.From(f.Name.FirstName());
+            var apellido = Apellido.From(f.Name.LastName());
+            var email = Email.From(f.Internet.Email(nombre.Value, apellido.Value));
+            return Usuario.Create(id, nombre, apellido, email);
+        });
 
         // Generar 15 usuarios semilla
         var usuariosGenerados = userFaker.Generate(15);

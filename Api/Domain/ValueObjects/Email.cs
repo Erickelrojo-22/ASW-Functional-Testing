@@ -8,7 +8,8 @@ public partial struct Email
 {
     private static readonly Regex EmailRegex = new(
         @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
 
     private static Validation Validate(string value)
     {
