@@ -46,8 +46,8 @@ public class DeleteUserTests : BaseIntegrationTest
 
         // 3. Verificar persistencia física real: el usuario aún existe en la base de datos pero tiene IsDeleted = true
         var db = Services.GetRequiredService<UsuariosDbContext>();
-        var userInDb = await db.Usuarios
-            .IgnoreQueryFilters() // Ignora el filtro global de soft delete
+        var userInDb = await db
+            .Usuarios.IgnoreQueryFilters() // Ignora el filtro global de soft delete
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         userInDb.ShouldNotBeNull();
@@ -80,7 +80,7 @@ public class DeleteUserTests : BaseIntegrationTest
 
         // Act: Intentar registrar un NUEVO usuario con el MISMO correo electrónico
         var secondCommand = UserTestFactory.CreateValidUserCommand(email: targetEmail);
-        
+
         // Assert: No debería lanzar excepción porque el único activo con ese correo fue eliminado
         var secondUser = await Sender.Send(secondCommand);
         secondUser.ShouldNotBeNull();

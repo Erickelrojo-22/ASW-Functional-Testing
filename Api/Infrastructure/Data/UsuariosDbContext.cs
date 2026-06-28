@@ -45,17 +45,13 @@ public class UsuariosDbContext : DbContext
                 .HasMaxLength(150)
                 .IsRequired();
 
-            b.Property(u => u.IsDeleted)
-                .IsRequired()
-                .HasDefaultValue(false);
+            b.Property(u => u.IsDeleted).IsRequired().HasDefaultValue(false);
 
             // Filtro global para ignorar registros eliminados
             b.HasQueryFilter(u => !u.IsDeleted);
 
             // Índice único en el campo Email (solo para usuarios activos)
-            b.HasIndex(u => u.Email)
-                .HasFilter("[IsDeleted] = 0")
-                .IsUnique();
+            b.HasIndex(u => u.Email).HasFilter("[IsDeleted] = 0").IsUnique();
         });
     }
 }

@@ -2,13 +2,13 @@ using System.Net;
 using System.Net.Http.Json;
 using Api.Application.Features.Users.CreateUser;
 using Api.Application.Features.Users.UpdateUser;
+using Api.Domain.Common;
 using Api.Infrastructure.Data;
 using Api.Tests.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
-using Api.Domain.Common;
 
 namespace Api.Tests.Features.Commands;
 
@@ -43,8 +43,10 @@ public class UpdateUserTests : BaseIntegrationTest
 
         // Verificar persistencia física en base de datos
         var db = Services.GetRequiredService<UsuariosDbContext>();
-        var userInDb = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == Api.Domain.ValueObjects.UserId.From(createdUser.Id));
-        
+        var userInDb = await db.Usuarios.FirstOrDefaultAsync(u =>
+            u.Id == Api.Domain.ValueObjects.UserId.From(createdUser.Id)
+        );
+
         userInDb.ShouldNotBeNull();
         userInDb.Nombre.Value.ShouldBe(updateCommand.Nombre);
         userInDb.Apellido.Value.ShouldBe(updateCommand.Apellido);
@@ -153,11 +155,14 @@ public class UpdateUserTests : BaseIntegrationTest
         var request = new UpdateUserRequest("Pedro", "Sanz", "pedro.sanz@example.com");
 
         // Act: Petición PUT
-        var httpResponse = await HttpClient.PutAsJsonAsync($"/api/usuarios/{createdUser.Id}", request);
+        var httpResponse = await HttpClient.PutAsJsonAsync(
+            $"/api/usuarios/{createdUser.Id}",
+            request
+        );
 
         // Assert
         httpResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
-        
+
         var userResponse = await httpResponse.Content.ReadFromJsonAsync<UpdateUserResponse>();
         userResponse.ShouldNotBeNull();
         userResponse.Id.ShouldBe(createdUser.Id);

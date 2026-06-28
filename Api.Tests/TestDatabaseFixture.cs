@@ -26,7 +26,8 @@ public class TestDatabaseFixture
         _factory?.Services
         ?? throw new InvalidOperationException("Los servicios no están inicializados.");
 
-    public static HttpClient CreateClient() => _factory?.CreateClient()
+    public static HttpClient CreateClient() =>
+        _factory?.CreateClient()
         ?? throw new InvalidOperationException("La fábrica web no está inicializada.");
 
     [OneTimeSetUp]

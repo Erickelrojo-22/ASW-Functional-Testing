@@ -16,23 +16,29 @@ public static class DeleteUserEndpoint
 {
     public static void MapDeleteUser(this IEndpointRouteBuilder app)
     {
-        app.MapDelete("/api/usuarios/{id:guid}", async (
-            Guid id,
-            [FromServices] ISender sender,
-            CancellationToken cancellationToken) =>
-        {
-            try
-            {
-                var command = new DeleteUserCommand(id);
-                var success = await sender.Send(command, cancellationToken);
-                return Results.NoContent();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return Results.NotFound(new { Error = "No encontrado", Detalle = ex.Message });
-            }
-        })
-        .WithName("DeleteUser");
+        app.MapDelete(
+                "/api/usuarios/{id:guid}",
+                async (
+                    Guid id,
+                    [FromServices] ISender sender,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    try
+                    {
+                        var command = new DeleteUserCommand(id);
+                        var success = await sender.Send(command, cancellationToken);
+                        return Results.NoContent();
+                    }
+                    catch (KeyNotFoundException ex)
+                    {
+                        return Results.NotFound(
+                            new { Error = "No encontrado", Detalle = ex.Message }
+                        );
+                    }
+                }
+            )
+            .WithName("DeleteUser");
     }
 }
 
@@ -57,7 +63,10 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, bool>
         var userId = UserId.From(request.Id);
 
         // 2. Buscar el usuario activo (el filtro global excluye automáticamente los eliminados)
-        var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var usuario = await _context.Usuarios.FirstOrDefaultAsync(
+            u => u.Id == userId,
+            cancellationToken
+        );
         if (usuario is null)
         {
             throw new KeyNotFoundException("No se encontró ningún usuario con el ID especificado.");

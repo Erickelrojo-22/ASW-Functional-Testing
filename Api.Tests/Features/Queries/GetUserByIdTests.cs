@@ -69,7 +69,7 @@ public class GetUserByIdTests : BaseIntegrationTest
 
         // Assert
         httpResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
-        
+
         var userResponse = await httpResponse.Content.ReadFromJsonAsync<GetUserByIdResponse>();
         userResponse.ShouldNotBeNull();
         userResponse.Id.ShouldBe(createdUser.Id);

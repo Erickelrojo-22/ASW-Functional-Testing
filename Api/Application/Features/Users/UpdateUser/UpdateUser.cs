@@ -17,32 +17,45 @@ public static class UpdateUserEndpoint
 {
     public static void MapUpdateUser(this IEndpointRouteBuilder app)
     {
-        app.MapPut("/api/usuarios/{id:guid}", async (
-            Guid id,
-            [FromBody] UpdateUserRequest request,
-            [FromServices] ISender sender,
-            CancellationToken cancellationToken) =>
-        {
-            try
-            {
-                var command = new UpdateUserCommand(id, request.Nombre, request.Apellido, request.Email);
-                var response = await sender.Send(command, cancellationToken);
-                return Results.Ok(response);
-            }
-            catch (Domain.Common.ValidationException ex)
-            {
-                return Results.ValidationProblem(ex.Errors);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { Error = "Regla de negocio violada", Detalle = ex.Message });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return Results.NotFound(new { Error = "No encontrado", Detalle = ex.Message });
-            }
-        })
-        .WithName("UpdateUser");
+        app.MapPut(
+                "/api/usuarios/{id:guid}",
+                async (
+                    Guid id,
+                    [FromBody] UpdateUserRequest request,
+                    [FromServices] ISender sender,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    try
+                    {
+                        var command = new UpdateUserCommand(
+                            id,
+                            request.Nombre,
+                            request.Apellido,
+                            request.Email
+                        );
+                        var response = await sender.Send(command, cancellationToken);
+                        return Results.Ok(response);
+                    }
+                    catch (Domain.Common.ValidationException ex)
+                    {
+                        return Results.ValidationProblem(ex.Errors);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return Results.BadRequest(
+                            new { Error = "Regla de negocio violada", Detalle = ex.Message }
+                        );
+                    }
+                    catch (KeyNotFoundException ex)
+                    {
+                        return Results.NotFound(
+                            new { Error = "No encontrado", Detalle = ex.Message }
+                        );
+                    }
+                }
+            )
+            .WithName("UpdateUser");
     }
 }
 
@@ -54,7 +67,8 @@ public record UpdateUserResponse(Guid Id, string Nombre, string Apellido, string
 
 // --- CQRS Command ---
 
-public record UpdateUserCommand(Guid Id, string Nombre, string Apellido, string Email) : IRequest<UpdateUserResponse>
+public record UpdateUserCommand(Guid Id, string Nombre, string Apellido, string Email)
+    : IRequest<UpdateUserResponse>
 {
     /// <summary>
     /// Realiza una validación acumulativa sobre el comando de actualización y lanza una excepción si hay errores.
@@ -99,7 +113,10 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Updat
         _context = context;
     }
 
-    public async Task<UpdateUserResponse> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
+    public async Task<UpdateUserResponse> Handle(
+        UpdateUserCommand request,
+        CancellationToken cancellationToken
+    )
     {
         // 1. Ejecutar validación acumulativa del comando
         UpdateUserCommand.Validate(request);
@@ -108,7 +125,10 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Updat
         var userId = UserId.From(request.Id);
 
         // 3. Buscar el usuario activo (el filtro global excluye automáticamente los eliminados)
-        var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var usuario = await _context.Usuarios.FirstOrDefaultAsync(
+            u => u.Id == userId,
+            cancellationToken
+        );
         if (usuario is null)
         {
             throw new KeyNotFoundException("No se encontró ningún usuario con el ID especificado.");
@@ -122,10 +142,15 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Updat
         // 5. Validación de regla de negocio: si el email cambia, verificar que sea único entre los no eliminados
         if (usuario.Email != nuevoEmail)
         {
-            var emailExists = await _context.Usuarios.AnyAsync(u => u.Email == nuevoEmail, cancellationToken);
+            var emailExists = await _context.Usuarios.AnyAsync(
+                u => u.Email == nuevoEmail,
+                cancellationToken
+            );
             if (emailExists)
             {
-                throw new InvalidOperationException("El correo electrónico ya está registrado por otro usuario.");
+                throw new InvalidOperationException(
+                    "El correo electrónico ya está registrado por otro usuario."
+                );
             }
         }
 
@@ -140,6 +165,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Updat
             usuario.Id.Value,
             usuario.Nombre.Value,
             usuario.Apellido.Value,
-            usuario.Email.Value);
+            usuario.Email.Value
+        );
     }
 }

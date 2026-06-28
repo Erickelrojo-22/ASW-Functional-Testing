@@ -1,8 +1,8 @@
 using Api.Application.Features.Users.GetUsers;
+using Api.Domain.Common;
 using Api.Tests.Factories;
 using NUnit.Framework;
 using Shouldly;
-using Api.Domain.Common;
 
 namespace Api.Tests.Features.Queries;
 
@@ -53,7 +53,9 @@ public class GetUsersTests : BaseIntegrationTest
     [Test]
     [TestCase(0)]
     [TestCase(-5)]
-    public async Task GetUsers_WithZeroOrNegativePage_ShouldThrowValidationException(int invalidPage)
+    public async Task GetUsers_WithZeroOrNegativePage_ShouldThrowValidationException(
+        int invalidPage
+    )
     {
         // Arrange
         var query = new GetUsersQuery(Page: invalidPage, PageSize: 10);

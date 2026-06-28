@@ -1,11 +1,11 @@
 using Api.Application.Features.Users.CreateUser;
+using Api.Domain.Common;
 using Api.Infrastructure.Data;
 using Api.Tests.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
-using Api.Domain.Common;
 
 namespace Api.Tests.Features.Commands;
 
@@ -31,8 +31,10 @@ public class CreateUserTests : BaseIntegrationTest
 
         // Verificar la persistencia física en la base de datos real
         var db = Services.GetRequiredService<UsuariosDbContext>();
-        var userInDb = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == Api.Domain.ValueObjects.Email.From(command.Email));
-        
+        var userInDb = await db.Usuarios.FirstOrDefaultAsync(u =>
+            u.Email == Api.Domain.ValueObjects.Email.From(command.Email)
+        );
+
         userInDb.ShouldNotBeNull();
         userInDb.Nombre.Value.ShouldBe(command.Nombre);
         userInDb.Apellido.Value.ShouldBe(command.Apellido);
@@ -73,11 +75,7 @@ public class CreateUserTests : BaseIntegrationTest
     public async Task CreateUser_WithMultipleInvalidFields_ShouldThrowValidationExceptionWithCumulativeErrors()
     {
         // Arrange
-        var command = new CreateUserCommand(
-            Nombre: "   ", 
-            Apellido: "", 
-            Email: "correo-invalido"
-        );
+        var command = new CreateUserCommand(Nombre: "   ", Apellido: "", Email: "correo-invalido");
 
         // Act & Assert
         var exception = await Should.ThrowAsync<ValidationException>(async () =>
@@ -93,7 +91,10 @@ public class CreateUserTests : BaseIntegrationTest
     [Test]
     [TestCase("duplicated@example.com", "DUPLICATED@example.com")]
     [TestCase("duplicated@example.com", "duplicated@example.com")]
-    public async Task CreateUser_WithDuplicateEmailDifferentCasing_ShouldThrowInvalidOperationException(string email1, string email2)
+    public async Task CreateUser_WithDuplicateEmailDifferentCasing_ShouldThrowInvalidOperationException(
+        string email1,
+        string email2
+    )
     {
         // Arrange: Crear un usuario con el primer email
         var command1 = UserTestFactory.CreateValidUserCommand(email: email1);
@@ -101,7 +102,7 @@ public class CreateUserTests : BaseIntegrationTest
 
         // Act & Assert: Intentar crear con el segundo email (debería fallar por duplicado, insensible a mayúsculas)
         var command2 = UserTestFactory.CreateValidUserCommand(email: email2);
-        
+
         await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
             await Sender.Send(command2);
